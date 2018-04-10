@@ -12,18 +12,11 @@ import scala.language.implicitConversions
 
 package object bitpay {
 
-  private val defaultSerializers = DefaultFormats.lossless.withBigDecimal
-
-  private val timeSerializers = Seq(JOffsetDateTimeSerializer, JInstantSerializer)
-
-  private val javaSerializers = Seq(UUIDSerializer)
-
-  private val enumSerializers = Seq(InvoiceEvent, LedgerCode).map(e => new EnumSerializer(e))
-
-  private val enumNameSerializers =
-    Seq(InvoiceExceptionState, InvoiceState, PolicyMethod, PolicyType, RefundState, TransactionSpeed).map(e => new EnumNameSerializer(e))
-
-  implicit lazy val formats = defaultSerializers ++ timeSerializers ++ javaSerializers ++ enumSerializers ++ enumNameSerializers
+  implicit lazy val formats = DefaultFormats.lossless.withBigDecimal + JInstantSerializer + JOffsetDateTimeSerializer + UUIDSerializer +
+    new EnumSerializer(InvoiceEvent) + new EnumSerializer(LedgerCode) +
+    new EnumNameSerializer(InvoiceExceptionState) + new EnumNameSerializer(InvoiceState) +
+    new EnumNameSerializer(PolicyMethod) + new EnumNameSerializer(PolicyType) +
+    new EnumNameSerializer(RefundState) + new EnumNameSerializer(TransactionSpeed)
 
   implicit def toJson(id: UUID): JValue = Extraction.decompose(id)
 
