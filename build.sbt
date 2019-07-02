@@ -2,20 +2,20 @@ name := "bitpay"
 
 organization := "com.alexdupre"
 
-version := "1.0"
+version := "1.1"
 
-crossScalaVersions := Seq("2.11.12", "2.12.5")
+crossScalaVersions := Seq("2.11.12", "2.12.8", "2.13.0")
 
-scalaVersion := "2.12.5"
+scalaVersion := "2.12.8"
 
 scalacOptions := List("-feature", "-unchecked", "-deprecation", "-explaintypes", "-encoding", "UTF8")
 
 resolvers += Resolver.typesafeRepo("releases")
 
 libraryDependencies ++= List(
-  "com.eed3si9n" %% "gigahorse-okhttp" % "0.3.1",
-  "org.json4s" %% "json4s-native" % "3.6.0-M3",
-  "org.json4s" %% "json4s-ext" % "3.6.0-M3",
+  "com.eed3si9n" %% "gigahorse-okhttp" % "0.5.0",
+  "org.json4s" %% "json4s-native" % "3.6.7",
+  "org.json4s" %% "json4s-ext" % "3.6.7",
   "com.madgag.spongycastle" % "core" % "1.58.0.0",
   "org.slf4j" % "slf4j-api" % "1.7.25",
   "ch.qos.logback" % "logback-classic" % "1.2.3" % "test"
