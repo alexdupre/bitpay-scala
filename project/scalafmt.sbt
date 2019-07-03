@@ -1,1 +1,1 @@
-addSbtPlugin("com.geirsson" % "sbt-scalafmt" % "1.4.0")
+addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.0.0")

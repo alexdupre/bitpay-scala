@@ -17,7 +17,7 @@ libraryDependencies ++= List(
   "org.json4s" %% "json4s-native" % "3.6.7",
   "org.json4s" %% "json4s-ext" % "3.6.7",
   "com.madgag.spongycastle" % "core" % "1.58.0.0",
-  "org.slf4j" % "slf4j-api" % "1.7.25",
+  "org.slf4j" % "slf4j-api" % "1.7.26",
   "ch.qos.logback" % "logback-classic" % "1.2.3" % "test"
 )
 

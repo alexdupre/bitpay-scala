@@ -15,8 +15,8 @@ Supported resources:
 
 The latest release of the library is compiled with Scala 2.11, 2.12 and 2.13 and supports only Gigahorse with OkHttp backend as HTTP provider.
 
-| Version | Artifact Id             | HTTP Provider   | Json Provider | Scala       |
-| ------- | ----------------------- | --------------- | ------------- | ----------- |
+| Version | Artifact Id             | HTTP Provider   | Json Provider | Scala              |
+| ------- | ----------------------- | --------------- | ------------- | ------------------ |
 | 1.1     | bitpay                  | Gigahorse 0.5.x | Json4s 3.6.x  | 2.11 & 2.12 & 2.13 |
 
 If you're using SBT, add the following line to your build file:

@@ -53,10 +53,12 @@ class BitPayClient(identity: Identity, testNet: Boolean, http: HttpClient)(impli
   private def getOptionalAccessToken(facades: String*): Option[String] =
     facades.find(tokens.isDefinedAt(_)).map(tokens(_))
 
-  private def get(path: String,
-                  params: Map[String, Any] = Map.empty,
-                  token: Option[String] = None,
-                  authenticated: Boolean = true): Request = {
+  private def get(
+      path: String,
+      params: Map[String, Any] = Map.empty,
+      token: Option[String] = None,
+      authenticated: Boolean = true
+  ): Request = {
     val fullParams = params + ("token" -> token)
     val req = fullParams.foldLeft(url(apiUrl + path)) { (req, param) =>
       param match {
@@ -78,10 +80,12 @@ class BitPayClient(identity: Identity, testNet: Boolean, http: HttpClient)(impli
     addHeaders(req, authenticated).post(payload)
   }
 
-  private def delete(path: String,
-                     params: Map[String, Option[Any]] = Map.empty,
-                     token: Option[String] = None,
-                     authenticated: Boolean = true): Request = {
+  private def delete(
+      path: String,
+      params: Map[String, Option[Any]] = Map.empty,
+      token: Option[String] = None,
+      authenticated: Boolean = true
+  ): Request = {
     val fullParams = params + ("token" -> token)
     val req = fullParams.foldLeft(url(apiUrl + path)) { (req, param) =>
       param match {
@@ -166,12 +170,14 @@ class BitPayClient(identity: Identity, testNet: Boolean, http: HttpClient)(impli
 
   // Invoices
 
-  override def createInvoice(amount: BigDecimal,
-                             currency: String,
-                             ipn: IPNParams = IPNParams(),
-                             order: OrderInfo = OrderInfo(),
-                             buyerEmail: Option[String] = None,
-                             redirectUrl: Option[String] = None): Future[Invoice] = {
+  override def createInvoice(
+      amount: BigDecimal,
+      currency: String,
+      ipn: IPNParams = IPNParams(),
+      order: OrderInfo = OrderInfo(),
+      buyerEmail: Option[String] = None,
+      redirectUrl: Option[String] = None
+  ): Future[Invoice] = {
     val params = ("price" -> amount) ~ ("currency" -> currency) ~ ("buyerEmail" -> buyerEmail) ~ ("redirectUrl" -> redirectUrl) merge Extraction
       .decompose(order) merge Extraction.decompose(ipn)
     execute[Invoice](post("invoices", params, getAccessToken("merchant", "pos")))
@@ -187,20 +193,24 @@ class BitPayClient(identity: Identity, testNet: Boolean, http: HttpClient)(impli
     execute[Invoice](get(s"invoices/$id", Map.empty, token, token.isDefined)).map(_.token)
   }
 
-  override def getInvoices(dateStart: Instant,
-                           dateEnd: Option[Instant] = None,
-                           status: Option[InvoiceState.Value] = None,
-                           orderId: Option[String] = None,
-                           itemCode: Option[String] = None,
-                           limit: Option[Int] = None,
-                           offset: Option[Int] = None): Future[Seq[Invoice]] = {
-    val params = Map("dateStart" -> dateStart,
-                     "dateEnd"  -> dateEnd,
-                     "status"   -> status,
-                     "orderId"  -> orderId,
-                     "itemCode" -> itemCode,
-                     "limit"    -> limit,
-                     "offset"   -> offset)
+  override def getInvoices(
+      dateStart: Instant,
+      dateEnd: Option[Instant] = None,
+      status: Option[InvoiceState.Value] = None,
+      orderId: Option[String] = None,
+      itemCode: Option[String] = None,
+      limit: Option[Int] = None,
+      offset: Option[Int] = None
+  ): Future[Seq[Invoice]] = {
+    val params = Map(
+      "dateStart" -> dateStart,
+      "dateEnd"   -> dateEnd,
+      "status"    -> status,
+      "orderId"   -> orderId,
+      "itemCode"  -> itemCode,
+      "limit"     -> limit,
+      "offset"    -> offset
+    )
     execute[Seq[Invoice]](get("invoices", params, getAccessToken("merchant")))
   }
 
@@ -232,9 +242,11 @@ class BitPayClient(identity: Identity, testNet: Boolean, http: HttpClient)(impli
     })
   }
 
-  override def getLedger(currency: String,
-                         startDate: OffsetDateTime = OffsetDateTime.now().minusMonths(1),
-                         endDate: OffsetDateTime = OffsetDateTime.now()): Future[Seq[LedgerEntry]] = {
+  override def getLedger(
+      currency: String,
+      startDate: OffsetDateTime = OffsetDateTime.now().minusMonths(1),
+      endDate: OffsetDateTime = OffsetDateTime.now()
+  ): Future[Seq[LedgerEntry]] = {
     val params = Map("startDate" -> startDate, "endDate" -> endDate)
     execute[Seq[LedgerEntry]](get(s"ledgers/$currency", params, getAccessToken("merchant")))
   }
