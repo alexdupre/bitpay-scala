@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.language.{postfixOps, reflectiveCalls}
 import scala.util.control.NonFatal
 import org.json4s._
 import org.json4s.native.JsonMethods._
