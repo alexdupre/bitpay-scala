@@ -12,7 +12,7 @@ case class Invoice(
     notificationEmail: Option[String],
     notificationURL: Option[String],
     redirectUrl: Option[String],
-    paymentCodes: Map[String, PaymentCodes],
+    paymentCodes: Map[String, Map[String, String]], // BIP72b & BIP73 for BTC/BCH, EIP681 for ETH
     posData: Option[String],
     physical: Option[Boolean],
     url: String,
@@ -20,6 +20,7 @@ case class Invoice(
     lowFeeDetected: Boolean,
     targetConfirmations: Int,
     amountPaid: Long,
+    displayAmountPaid: String,
     paymentSubtotals: Map[String, Long],
     paymentTotals: Map[String, Long],
     paymentDisplaySubTotals: Map[String, String],
