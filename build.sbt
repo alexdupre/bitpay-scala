@@ -2,7 +2,7 @@ name := "bitpay"
 
 organization := "com.alexdupre"
 
-version := "1.2"
+version := "1.3"
 
 crossScalaVersions := Seq("2.11.12", "2.12.10", "2.13.1")
 
@@ -21,39 +21,13 @@ libraryDependencies ++= List(
   "ch.qos.logback" % "logback-classic" % "1.2.3" % "test"
 )
 
+publishTo := sonatypePublishToBundle.value
+
 publishMavenStyle := true
 
-publishTo := {
-  val nexus = "https://oss.sonatype.org/"
-  if (isSnapshot.value)
-    Some("snapshots" at nexus + "content/repositories/snapshots")
-  else
-    Some("releases" at nexus + "service/local/staging/deploy/maven2")
-}
+licenses := Seq("BSD-style" -> url("http://www.opensource.org/licenses/bsd-license.php"))
 
-pomIncludeRepository := { _ =>
-  false
-}
-
-pomExtra := (<url>https://github.com/alexdupre/bitpay-scala</url>
-  <licenses>
-    <license>
-      <name>BSD-style</name>
-      <url>http://www.opensource.org/licenses/bsd-license.php</url>
-      <distribution>repo</distribution>
-    </license>
-  </licenses>
-  <scm>
-    <url>git@github.com:alexdupre/bitpay-scala.git</url>
-    <connection>scm:git:git@github.com:alexdupre/bitpay-scala.git</connection>
-  </scm>
-  <developers>
-    <developer>
-      <id>alexdupre</id>
-      <name>Alex Dupre</name>
-      <url>http://www.alexdupre.com</url>
-    </developer>
-  </developers>)
+sonatypeProjectHosting := Some(xerial.sbt.Sonatype.GitHubHosting("alexdupre", "bitpay-scala", "Alex Dupre", "ale@FreeBSD.org"))
 
 buildInfoKeys := Seq[BuildInfoKey](version)
 
