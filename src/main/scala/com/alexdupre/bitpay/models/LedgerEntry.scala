@@ -9,7 +9,7 @@ case class LedgerEntry(
     amount: BigDecimal,
     code: LedgerCode,
     timestamp: OffsetDateTime,
-    currency: Option[Currency],
+    currency: Option[String],
     txType: String, // deprecated
     scale: Long,
     id: String,

@@ -6,7 +6,7 @@ import com.alexdupre.bitpay.models._
 import gigahorse._
 import gigahorse.support.okhttp.Gigahorse._
 import org.slf4j.LoggerFactory
-import play.api.libs.json.{JsObject, JsResultException, JsValue, Json, Reads}
+import play.api.libs.json.{JsArray, JsObject, JsResultException, JsValue, Json, Reads}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
@@ -108,8 +108,8 @@ class BitPayClient(identity: Identity, testNet: Boolean, http: HttpClient)(impli
         try {
           js match {
             case o: JsObject => (o \ "data").as[T]
-            //case a: JsArray  => a.as[T]
-            case _ => throw BitPayProtocolException()
+            case a: JsArray  => a.as[T]
+            case _           => throw BitPayProtocolException()
           }
         } catch {
           case e: JsResultException => throw BitPayProtocolException("BitPay JSON error: " + e.getMessage).initCause(e)
@@ -209,9 +209,9 @@ class BitPayClient(identity: Identity, testNet: Boolean, http: HttpClient)(impli
   }
 
   override def requestRefund(id: String, buyerEmail: String): Future[Unit] = {
-    getInvoiceToken(id).flatMap { token =>
-      val params = Json.obj("refundEmail" -> buyerEmail)
-      execute[JsValue](post(s"invoices/$id/refunds", params, Some(token))).map(_ => ())
+    getInvoice(id).flatMap { invoice =>
+      val params = Json.obj("refundEmail" -> buyerEmail, "amount" -> invoice.amountPaid, "currency" -> invoice.currency)
+      execute[JsValue](post(s"invoices/$id/refunds", params, Some(invoice.token))).map(_ => ())
     }
   }
 

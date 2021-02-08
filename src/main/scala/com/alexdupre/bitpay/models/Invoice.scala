@@ -24,13 +24,13 @@ case class Invoice(
     exceptionStatus: Either[Boolean, InvoiceExceptionState],
     targetConfirmations: Int,
     transactions: Seq[Transaction],
-    //transactionSpeed
+    transactionSpeed: TransactionSpeed,
     buyer: BuyerInfo,
     redirectUrl: Option[String],
-    //refundAddresses: Seq[RefundAddress], // JObject(List((2N8hwP1WmJrFF5QWABn38y63uYLhnJYJYTF,JObject(List((type,JString(buyerSupplied)), (date,JString(2018-04-09T09:43:36.915Z)))))))
+    refundAddresses: Seq[Map[String, RefundAddressInfo]],
     refundAddressRequestPending: Boolean,
     buyerProvidedEmail: Option[String],
-    //buyerProvidedInfo: BuyerProvidedInfo,
+    buyerProvidedInfo: BuyerProvidedInfo,
     paymentSubtotals: Map[String, BigInt],
     paymentTotals: Map[String, BigInt],
     paymentDisplayTotals: Map[String, String],
@@ -38,9 +38,9 @@ case class Invoice(
     exchangeRates: Map[String, Map[String, BigDecimal]],
     minerFees: Map[String, MinerFee],
     nonPayProPaymentReceived: Option[Boolean],
-    //shopper: Shopper
-    //billId
-    //refundInfo
+    shopper: Shopper,
+    billId: Option[String],
+    refundInfo: Option[Seq[RefundInfo]], // never seen
     jsonPayProRequired: Boolean,
     transactionCurrency: Option[String],
     underpaidAmount: Option[BigDecimal],
