@@ -174,6 +174,7 @@ class BitPayClient(identity: Identity, testNet: Boolean, http: HttpClient)(impli
       buyer: Option[BuyerInfo] = None,
       redirectUrl: Option[String] = None
   ): Future[Invoice] = {
+    implicit val buyerFormat = BuyerInfo.standardFormat
     val params = Json.obj("price" -> amount, "currency" -> currency, "buyer" -> buyer, "redirectUrl" -> redirectUrl) ++
       Json.toJsObject(order) ++ Json.toJsObject(ipn)
     execute[Invoice](post("invoices", params, getAccessToken("merchant", "pos")))

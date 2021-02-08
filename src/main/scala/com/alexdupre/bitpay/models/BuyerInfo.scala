@@ -8,9 +8,9 @@ case class BuyerInfo(
     name: Option[String] = None,
     address1: Option[String] = None,
     address2: Option[String] = None,
-    locality: Option[String] = None,
-    region: Option[String] = None,
-    postalCode: Option[String] = None,
+    city: Option[String] = None,
+    state: Option[String] = None,
+    zip: Option[String] = None,
     country: Option[String] = None,
     email: Option[String] = None,
     phone: Option[String] = None,
@@ -18,7 +18,7 @@ case class BuyerInfo(
 )
 
 object BuyerInfo {
-  implicit val format = ((__ \ "name").formatNullable[String] ~
+  val standardFormat = ((__ \ "name").formatNullable[String] ~
     (__ \ "address1").formatNullable[String] ~
     (__ \ "address2").formatNullable[String] ~
     (__ \ "locality").formatNullable[String] ~
@@ -28,4 +28,16 @@ object BuyerInfo {
     (__ \ "email").formatNullable[String] ~
     (__ \ "phone").formatNullable[String] ~
     (__ \ "notify").formatNullable[Boolean])(BuyerInfo.apply, unlift(BuyerInfo.unapply))
+
+  val alternativeFormat = ((__ \ "buyerName").formatNullable[String] ~
+    (__ \ "buyerAddress1").formatNullable[String] ~
+    (__ \ "buyerAddress2").formatNullable[String] ~
+    (__ \ "buyerCity").formatNullable[String] ~
+    (__ \ "buyerState").formatNullable[String] ~
+    (__ \ "buyerZip").formatNullable[String] ~
+    (__ \ "buyerCountry").formatNullable[String] ~
+    (__ \ "buyerEmail").formatNullable[String] ~
+    (__ \ "buyerPhone").formatNullable[String] ~
+    (__ \ "buyerNotify").formatNullable[Boolean])(BuyerInfo.apply, unlift(BuyerInfo.unapply))
+
 }

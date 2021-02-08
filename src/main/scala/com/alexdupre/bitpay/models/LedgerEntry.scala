@@ -26,5 +26,6 @@ case class LedgerEntry(
 }
 
 object LedgerEntry {
-  implicit val format = Json.format[LedgerEntry]
+  implicit val buyerFormat = BuyerInfo.alternativeFormat
+  implicit val format      = Json.format[LedgerEntry]
 }

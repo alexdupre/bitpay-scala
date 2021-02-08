@@ -6,22 +6,25 @@ import java.time.Instant
 
 case class InvoiceNotification(
     id: String,
+    url: String,
+    posData: Option[String],
+    status: InvoiceState,
     price: BigDecimal,
     currency: String,
-    posData: Option[String],
-    url: String,
-    status: InvoiceState,
-    amountPaid: BigDecimal,
-    paymentSubtotals: Map[String, BigDecimal],
-    paymentTotals: Map[String, BigDecimal],
     invoiceTime: Instant,
     expirationTime: Instant,
     currentTime: Instant,
     exceptionStatus: Option[InvoiceExceptionState],
+    buyerFields: BuyerInfo,
+    paymentSubtotals: Map[String, BigDecimal],
+    paymentTotals: Map[String, BigDecimal],
     exchangeRates: Map[String, Map[String, BigDecimal]],
+    amountPaid: BigDecimal,
+    orderId: Option[String],
     transactionCurrency: Option[String]
 )
 
 object InvoiceNotification {
-  implicit val format = Json.format[InvoiceNotification]
+  implicit val buyerFormat = BuyerInfo.alternativeFormat
+  implicit val format      = Json.format[InvoiceNotification]
 }

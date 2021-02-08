@@ -51,6 +51,7 @@ case class Invoice(
 )
 
 object Invoice {
+  implicit val buyerFormat = BuyerInfo.standardFormat
   implicit val readEither: Reads[Either[Boolean, InvoiceExceptionState]] = new Reads[Either[Boolean, InvoiceExceptionState]] {
     override def reads(json: JsValue): JsResult[Either[Boolean, InvoiceExceptionState]] = json match {
       case JsBoolean(b) => JsSuccess(Left(b))
