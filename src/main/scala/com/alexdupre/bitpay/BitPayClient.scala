@@ -171,11 +171,11 @@ class BitPayClient(identity: Identity, testNet: Boolean, http: HttpClient)(impli
       currency: String,
       ipn: IPNParams = IPNParams(),
       order: OrderInfo = OrderInfo(),
-      buyer: Option[BuyerInfo] = None,
-      redirectUrl: Option[String] = None
+      buyer: BuyerInfo = BuyerInfo(),
+      redirectURL: Option[String] = None
   ): Future[Invoice] = {
     implicit val buyerFormat = BuyerInfo.standardFormat
-    val params = Json.obj("price" -> amount, "currency" -> currency, "buyer" -> buyer, "redirectUrl" -> redirectUrl) ++
+    val params = Json.obj("price" -> amount, "currency" -> currency, "buyer" -> buyer, "redirectURL" -> redirectURL) ++
       Json.toJsObject(order) ++ Json.toJsObject(ipn)
     execute[Invoice](post("invoices", params, getAccessToken("merchant", "pos")))
   }

@@ -14,7 +14,7 @@ case class InvoiceNotification(
     invoiceTime: Instant,
     expirationTime: Instant,
     currentTime: Instant,
-    exceptionStatus: Option[InvoiceExceptionState],
+    exceptionStatus: Either[Boolean, InvoiceExceptionState],
     buyerFields: BuyerInfo,
     paymentSubtotals: Map[String, BigDecimal],
     paymentTotals: Map[String, BigDecimal],

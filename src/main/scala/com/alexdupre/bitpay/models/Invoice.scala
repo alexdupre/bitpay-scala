@@ -1,7 +1,6 @@
 package com.alexdupre.bitpay.models
 
 import ai.x.play.json.Jsonx
-import play.api.libs.json.{JsBoolean, JsResult, JsSuccess, JsValue, Json, Reads, Writes}
 
 import java.time.Instant
 
@@ -26,7 +25,7 @@ case class Invoice(
     transactions: Seq[Transaction],
     transactionSpeed: TransactionSpeed,
     buyer: BuyerInfo,
-    redirectUrl: Option[String],
+    redirectURL: Option[String],
     refundAddresses: Seq[Map[String, RefundAddressInfo]],
     refundAddressRequestPending: Boolean,
     buyerProvidedEmail: Option[String],
@@ -52,14 +51,5 @@ case class Invoice(
 
 object Invoice {
   implicit val buyerFormat = BuyerInfo.standardFormat
-  implicit val readEither: Reads[Either[Boolean, InvoiceExceptionState]] = new Reads[Either[Boolean, InvoiceExceptionState]] {
-    override def reads(json: JsValue): JsResult[Either[Boolean, InvoiceExceptionState]] = json match {
-      case JsBoolean(b) => JsSuccess(Left(b))
-      case _            => json.validate[InvoiceExceptionState].map(s => Right(s))
-    }
-  }
-  implicit val writeEither: Writes[Either[Boolean, InvoiceExceptionState]] = new Writes[Either[Boolean, InvoiceExceptionState]] {
-    override def writes(o: Either[Boolean, InvoiceExceptionState]): JsValue = o.fold(b => JsBoolean(b), s => Json.toJson(s))
-  }
-  implicit val format = Jsonx.formatCaseClass[Invoice]
+  implicit val format      = Jsonx.formatCaseClass[Invoice]
 }

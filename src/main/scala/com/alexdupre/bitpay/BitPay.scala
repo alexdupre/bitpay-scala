@@ -23,8 +23,8 @@ trait BitPay {
       currency: String,
       ipn: IPNParams = IPNParams(),
       order: OrderInfo = OrderInfo(),
-      buyer: Option[BuyerInfo] = None,
-      redirectUrl: Option[String] = None
+      buyer: BuyerInfo = BuyerInfo(),
+      redirectURL: Option[String] = None
   ): Future[Invoice]
 
   def getInvoice(id: String): Future[Invoice]
