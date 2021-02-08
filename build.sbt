@@ -2,7 +2,7 @@ name := "bitpay"
 
 organization := "com.alexdupre"
 
-version := "2.0-SNAPSHOT"
+version := "2.1"
 
 crossScalaVersions := Seq("2.11.12", "2.12.13", "2.13.4")
 
