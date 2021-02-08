@@ -2,20 +2,16 @@ package com.alexdupre.bitpay
 
 import java.time.{Instant, OffsetDateTime}
 import java.util.UUID
-
 import com.alexdupre.bitpay.models._
 import gigahorse._
 import gigahorse.support.okhttp.Gigahorse._
-import org.json4s.JObject
 import org.slf4j.LoggerFactory
+import play.api.libs.json.{JsObject, JsResultException, JsValue, Json, Reads}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.control.NonFatal
-import org.json4s._
-import org.json4s.native.JsonMethods._
-import org.json4s.JsonDSL.WithBigDecimal._
 
 class BitPayClient(identity: Identity, testNet: Boolean, http: HttpClient)(implicit ec: ExecutionContext) extends BitPay {
 
@@ -42,8 +38,8 @@ class BitPayClient(identity: Identity, testNet: Boolean, http: HttpClient)(impli
       req.addHeader("x-accept-version" -> "2.0.0")
   }
 
-  private def addGuidAndToken(params: JValue, token: Option[String]): JValue = {
-    params merge (("guid" -> UUID.randomUUID()) ~ ("token" -> token))
+  private def addGuidAndToken(params: JsObject, token: Option[String]): JsObject = {
+    params ++ Json.obj("guid" -> UUID.randomUUID(), "token" -> token)
   }
 
   private def getAccessToken(facades: String*): Option[String] =
@@ -62,19 +58,19 @@ class BitPayClient(identity: Identity, testNet: Boolean, http: HttpClient)(impli
     val req = fullParams.foldLeft(url(apiUrl + path)) { (req, param) =>
       param match {
         case (key, Some(value)) => req.addQueryString(key -> value.toString)
-        case (key, None)        => req
+        case (_, None)          => req
         case (key, value)       => req.addQueryString(key -> value.toString)
       }
     }
     addHeaders(req, authenticated).get
   }
 
-  private def post(path: String, params: JValue = JObject(), token: Option[String] = None, authenticated: Boolean = true) = {
+  private def post(path: String, params: JsObject = Json.obj(), token: Option[String] = None, authenticated: Boolean = true) = {
     val payload = addGuidAndToken(params, token)
     val req     = url(apiUrl + path)
-    implicit val jsonCodec = new HttpWrite[JValue] {
-      override def toByteArray(a: JValue): Array[Byte] = compact(render(a)).getBytes(utf8)
-      override def contentType: Option[String]         = Some(MimeTypes.JSON)
+    implicit val jsonCodec = new HttpWrite[JsObject] {
+      override def toByteArray(a: JsObject): Array[Byte] = a.toString().getBytes(utf8)
+      override def contentType: Option[String]           = Some(MimeTypes.JSON)
     }
     addHeaders(req, authenticated).post(payload)
   }
@@ -95,30 +91,31 @@ class BitPayClient(identity: Identity, testNet: Boolean, http: HttpClient)(impli
     addHeaders(req, authenticated).delete
   }
 
-  def execute[T](req: Request)(implicit formats: Formats = DefaultFormats, manifest: Manifest[T]): Future[T] = {
+  def execute[T](req: Request)(implicit reads: Reads[T]): Future[T] = {
     logger.debug(s"Request: ${req.method} ${req.url}")
     if (req.method == "POST" && logger.isTraceEnabled)
       logger.trace(s"Payload: ${new String(req.body.asInstanceOf[InMemoryBody].bytes, utf8)}")
     http.processFull(req).map { response =>
       logger.debug(s"Response Status: ${response.status}")
-      val js = try {
-        parse(response.bodyAsString, true)
-      } catch {
-        case NonFatal(_) => throw BitPayProtocolException()
-      }
-      logger.trace(s"Response:\n${pretty(render(js))}")
+      val js =
+        try {
+          Json.parse(response.bodyAsString)
+        } catch {
+          case NonFatal(_) => throw BitPayProtocolException()
+        }
+      logger.trace(s"Response:\n${Json.prettyPrint(js)}")
       if (response.status / 100 == 2) {
         try {
           js match {
-            case o: JObject => (o \ "data").extract[T]
-            case a: JArray  => a.extract[T]
-            case _          => throw BitPayProtocolException()
+            case o: JsObject => (o \ "data").as[T]
+            //case a: JsArray  => a.as[T]
+            case _ => throw BitPayProtocolException()
           }
         } catch {
-          case e: MappingException => throw BitPayProtocolException("BitPay JSON error: " + e.getMessage).initCause(e)
+          case e: JsResultException => throw BitPayProtocolException("BitPay JSON error: " + e.getMessage).initCause(e)
         }
       } else {
-        throw js.extractOpt[BitPayReturnedException].getOrElse(BitPayProtocolException())
+        throw (js \ "error").asOpt[String].map(BitPayReturnedException).getOrElse(BitPayProtocolException())
       }
     }
   }
@@ -130,7 +127,7 @@ class BitPayClient(identity: Identity, testNet: Boolean, http: HttpClient)(impli
   }
 
   override def getPairingCode(label: String, facade: String): Future[Token] = {
-    val params = ("label" -> label.replaceAll("[^a-zA-Z0-9_ ]", "_").take(60)) ~ ("id" -> identity.sin) ~ ("facade" -> facade)
+    val params = Json.obj("label" -> label.replaceAll("[^a-zA-Z0-9_ ]", "_").take(60), "id" -> identity.sin, "facade" -> facade)
     execute[Seq[Token]](post("tokens", params, authenticated = false)) map { ts =>
       tokens ++= ts.map(t => t.facade -> t.token)
       ts.sortBy(_.dateCreated).last
@@ -138,7 +135,7 @@ class BitPayClient(identity: Identity, testNet: Boolean, http: HttpClient)(impli
   }
 
   override def setPairingCode(label: String, pairingCode: String): Future[Token] = {
-    val params = ("label" -> label.replaceAll("[^a-zA-Z0-9_ ]", "_").take(60)) ~ ("id" -> identity.sin) ~ ("pairingCode" -> pairingCode)
+    val params = Json.obj("label" -> label.replaceAll("[^a-zA-Z0-9_ ]", "_").take(60), "id" -> identity.sin, "pairingCode" -> pairingCode)
     execute[Seq[Token]](post("tokens", params, authenticated = false)) map { ts =>
       tokens ++= ts.map(t => t.facade -> t.token)
       ts.sortBy(_.dateCreated).last
@@ -149,22 +146,22 @@ class BitPayClient(identity: Identity, testNet: Boolean, http: HttpClient)(impli
 
   override def getCurrencies(): Future[Map[String, Currency]] = {
     val rates = execute[Seq[Currency]](get("currencies", authenticated = false))
-    rates.map(_.foldLeft(Map[String, Currency]()) {
-      case (m, c) => m + (c.code -> c)
+    rates.map(_.foldLeft(Map[String, Currency]()) { case (m, c) =>
+      m + (c.code -> c)
     })
   }
 
   // Rates
 
-  override def getRates(): Future[Map[String, Rate]] = {
-    val rates = execute[Seq[Rate]](get("rates", authenticated = false))
-    rates.map(_.foldLeft(Map[String, Rate]()) {
-      case (m, r) => m + (r.code -> r)
+  override def getRates(cryptoCurrency: String): Future[Map[String, Rate]] = {
+    val rates = execute[Seq[Rate]](get(s"rates/$cryptoCurrency", authenticated = false))
+    rates.map(_.foldLeft(Map[String, Rate]()) { case (m, r) =>
+      m + (r.code -> r)
     })
   }
 
-  override def getRate(currency: String): Future[Rate] = {
-    execute[Rate](get(s"rates/$currency", authenticated = false))
+  override def getRate(cryptoCurrency: String, fiatCurrency: String): Future[Rate] = {
+    execute[Rate](get(s"rates/$cryptoCurrency/$fiatCurrency", authenticated = false))
   }
 
   // Invoices
@@ -174,11 +171,11 @@ class BitPayClient(identity: Identity, testNet: Boolean, http: HttpClient)(impli
       currency: String,
       ipn: IPNParams = IPNParams(),
       order: OrderInfo = OrderInfo(),
-      buyerEmail: Option[String] = None,
+      buyer: Option[BuyerInfo] = None,
       redirectUrl: Option[String] = None
   ): Future[Invoice] = {
-    val params = ("price" -> amount) ~ ("currency" -> currency) ~ ("buyerEmail" -> buyerEmail) ~ ("redirectUrl" -> redirectUrl) merge Extraction
-      .decompose(order) merge Extraction.decompose(ipn)
+    val params = Json.obj("price" -> amount, "currency" -> currency, "buyer" -> buyer, "redirectUrl" -> redirectUrl) ++
+      Json.toJsObject(order) ++ Json.toJsObject(ipn)
     execute[Invoice](post("invoices", params, getAccessToken("merchant", "pos")))
   }
 
@@ -194,19 +191,17 @@ class BitPayClient(identity: Identity, testNet: Boolean, http: HttpClient)(impli
 
   override def getInvoices(
       dateStart: Instant,
-      dateEnd: Option[Instant] = None,
-      status: Option[InvoiceState.Value] = None,
+      dateEnd: Instant,
+      status: Option[InvoiceState] = None,
       orderId: Option[String] = None,
-      itemCode: Option[String] = None,
       limit: Option[Int] = None,
       offset: Option[Int] = None
   ): Future[Seq[Invoice]] = {
     val params = Map(
       "dateStart" -> dateStart,
       "dateEnd"   -> dateEnd,
-      "status"    -> status,
+      "status"    -> status.map(_.entryName),
       "orderId"   -> orderId,
-      "itemCode"  -> itemCode,
       "limit"     -> limit,
       "offset"    -> offset
     )
@@ -215,8 +210,8 @@ class BitPayClient(identity: Identity, testNet: Boolean, http: HttpClient)(impli
 
   override def requestRefund(id: String, buyerEmail: String): Future[Unit] = {
     getInvoiceToken(id).flatMap { token =>
-      val params = ("refundEmail" -> buyerEmail)
-      execute[JValue](post(s"invoices/$id/refunds", params, Some(token))).map(_ => ())
+      val params = Json.obj("refundEmail" -> buyerEmail)
+      execute[JsValue](post(s"invoices/$id/refunds", params, Some(token))).map(_ => ())
     }
   }
 
@@ -236,8 +231,8 @@ class BitPayClient(identity: Identity, testNet: Boolean, http: HttpClient)(impli
 
   override def getLedgers(): Future[Map[String, LedgerSummary]] = {
     val ledgers = execute[Seq[LedgerSummary]](get("ledgers", token = getAccessToken("merchant")))
-    ledgers.map(_.foldLeft(Map[String, LedgerSummary]()) {
-      case (m, s) => m + (s.currency -> s)
+    ledgers.map(_.foldLeft(Map[String, LedgerSummary]()) { case (m, s) =>
+      m + (s.currency -> s)
     })
   }
 

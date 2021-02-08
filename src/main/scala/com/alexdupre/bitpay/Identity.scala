@@ -4,14 +4,14 @@ import java.io.ByteArrayOutputStream
 import java.math.BigInteger
 import java.security.SecureRandom
 
-import org.spongycastle.asn1._
-import org.spongycastle.asn1.sec.SECNamedCurves
-import org.spongycastle.crypto.Digest
-import org.spongycastle.crypto.digests.{RIPEMD160Digest, SHA256Digest}
-import org.spongycastle.crypto.params.{ECDomainParameters, ECPrivateKeyParameters, ECPublicKeyParameters}
-import org.spongycastle.crypto.signers.ECDSASigner
-import org.spongycastle.math.ec.FixedPointCombMultiplier
-import org.spongycastle.util.encoders.Hex
+import org.bouncycastle.asn1._
+import org.bouncycastle.asn1.sec.SECNamedCurves
+import org.bouncycastle.crypto.Digest
+import org.bouncycastle.crypto.digests.{RIPEMD160Digest, SHA256Digest}
+import org.bouncycastle.crypto.params.{ECDomainParameters, ECPrivateKeyParameters, ECPublicKeyParameters}
+import org.bouncycastle.crypto.signers.ECDSASigner
+import org.bouncycastle.math.ec.FixedPointCombMultiplier
+import org.bouncycastle.util.encoders.Hex
 
 class Identity(secret: BigInteger) {
 
@@ -29,7 +29,7 @@ class Identity(secret: BigInteger) {
 
   lazy val sin = {
     val pubKeyHash     = ripemd160(sha256(encodedPubKey))
-    val version        = 0x0F.toByte
+    val version        = 0x0f.toByte
     val SINtype        = 0x02.toByte
     val preSINbyte     = version +: SINtype +: pubKeyHash
     val hash2Bytes     = sha256(sha256(preSINbyte))
@@ -41,7 +41,7 @@ class Identity(secret: BigInteger) {
   def signRequest(url: String, payload: Array[Byte]): String = {
     def encode(rs: Array[BigInteger]) = {
       val baos = new ByteArrayOutputStream
-      val der  = new DEROutputStream(baos)
+      val der  = ASN1OutputStream.create(baos, ASN1Encoding.DER)
       val v    = new ASN1EncodableVector
       rs.foreach(n => v.add(new ASN1Integer(n)))
       der.writeObject(new DERSequence(v))

@@ -1,10 +1,16 @@
 package com.alexdupre.bitpay.models
 
-object PolicyType extends Enumeration {
+import enumeratum.EnumEntry.Uncapitalised
+import enumeratum._
 
-  val SIN     = Value("sin")
-  val Access  = Value("access")
-  val Events  = Value("events")
-  val ID      = Value("id")
-  val Session = Value("session")
+sealed trait PolicyType extends EnumEntry with Uncapitalised
+
+object PolicyType extends Enum[PolicyType] with PlayJsonEnum[PolicyType] {
+  val values = findValues
+
+  case object Sin     extends PolicyType
+  case object Access  extends PolicyType
+  case object Events  extends PolicyType
+  case object Id      extends PolicyType
+  case object Session extends PolicyType
 }

@@ -1,8 +1,14 @@
 package com.alexdupre.bitpay.models
 
-object TransactionSpeed extends Enumeration {
+import enumeratum.EnumEntry.Uncapitalised
+import enumeratum._
 
-  val High   = Value("high")
-  val Medium = Value("medium")
-  val Low    = Value("low")
+sealed trait TransactionSpeed extends EnumEntry with Uncapitalised
+
+object TransactionSpeed extends Enum[TransactionSpeed] with PlayJsonEnum[TransactionSpeed] {
+  val values = findValues
+
+  case object High   extends TransactionSpeed
+  case object Medium extends TransactionSpeed
+  case object Low    extends TransactionSpeed
 }

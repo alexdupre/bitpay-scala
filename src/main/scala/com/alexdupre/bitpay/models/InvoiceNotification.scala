@@ -1,5 +1,7 @@
 package com.alexdupre.bitpay.models
 
+import play.api.libs.json.Json
+
 import java.time.Instant
 
 case class InvoiceNotification(
@@ -8,14 +10,18 @@ case class InvoiceNotification(
     currency: String,
     posData: Option[String],
     url: String,
-    status: InvoiceState.Value,
-    amountPaid: Long,
-    paymentSubtotals: Map[String, Long],
-    paymentTotals: Map[String, Long],
+    status: InvoiceState,
+    amountPaid: BigDecimal,
+    paymentSubtotals: Map[String, BigDecimal],
+    paymentTotals: Map[String, BigDecimal],
     invoiceTime: Instant,
     expirationTime: Instant,
     currentTime: Instant,
-    exceptionStatus: Option[InvoiceExceptionState.Value],
+    exceptionStatus: Option[InvoiceExceptionState],
     exchangeRates: Map[String, Map[String, BigDecimal]],
     transactionCurrency: Option[String]
 )
+
+object InvoiceNotification {
+  implicit val format = Json.format[InvoiceNotification]
+}

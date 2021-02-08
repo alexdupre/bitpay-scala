@@ -1,8 +1,14 @@
 package com.alexdupre.bitpay.models
 
-object RefundState extends Enumeration {
+import enumeratum.EnumEntry.Uncapitalised
+import enumeratum._
 
-  val Pending = Value("pending")
-  val Success = Value("success")
-  val Failure = Value("failure")
+sealed trait RefundState extends EnumEntry with Uncapitalised
+
+object RefundState extends Enum[RefundState] with PlayJsonEnum[RefundState] {
+  val values = findValues
+
+  case object Pending extends RefundState
+  case object Success extends RefundState
+  case object Failure extends RefundState
 }

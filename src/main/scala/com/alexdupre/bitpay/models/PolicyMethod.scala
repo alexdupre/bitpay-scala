@@ -1,10 +1,16 @@
 package com.alexdupre.bitpay.models
 
-object PolicyMethod extends Enumeration {
+import enumeratum.EnumEntry.Uncapitalised
+import enumeratum._
 
-  val Require     = Value("require")
-  val Allow       = Value("allow")
-  val Invalidated = Value("invalidated")
-  val Inactive    = Value("inactive")
-  val Unclaimed   = Value("unclaimed")
+sealed trait PolicyMethod extends EnumEntry with Uncapitalised
+
+object PolicyMethod extends Enum[PolicyMethod] with PlayJsonEnum[PolicyMethod] {
+  val values = findValues
+
+  case object Require     extends PolicyMethod
+  case object Allow       extends PolicyMethod
+  case object Invalidated extends PolicyMethod
+  case object Inactive    extends PolicyMethod
+  case object Unclaimed   extends PolicyMethod
 }

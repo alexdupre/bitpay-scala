@@ -14,16 +14,16 @@ trait BitPay {
 
   def getCurrencies(): Future[Map[String, Currency]]
 
-  def getRates(): Future[Map[String, Rate]]
+  def getRates(cryptoCurrency: String): Future[Map[String, Rate]]
 
-  def getRate(currency: String): Future[Rate]
+  def getRate(cryptoCurrency: String, fiatCurrency: String): Future[Rate]
 
   def createInvoice(
       amount: BigDecimal,
       currency: String,
       ipn: IPNParams = IPNParams(),
       order: OrderInfo = OrderInfo(),
-      buyerEmail: Option[String] = None,
+      buyer: Option[BuyerInfo] = None,
       redirectUrl: Option[String] = None
   ): Future[Invoice]
 
@@ -31,10 +31,9 @@ trait BitPay {
 
   def getInvoices(
       dateStart: Instant,
-      dateEnd: Option[Instant] = None,
-      status: Option[InvoiceState.Value] = None,
+      dateEnd: Instant,
+      status: Option[InvoiceState] = None,
       orderId: Option[String] = None,
-      itemCode: Option[String] = None,
       limit: Option[Int] = None,
       offset: Option[Int] = None
   ): Future[Seq[Invoice]]

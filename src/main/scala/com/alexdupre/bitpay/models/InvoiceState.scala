@@ -1,11 +1,17 @@
 package com.alexdupre.bitpay.models
 
-object InvoiceState extends Enumeration {
+import enumeratum.EnumEntry.Uncapitalised
+import enumeratum._
 
-  val New       = Value("new")
-  val Paid      = Value("paid")
-  val Confirmed = Value("confirmed")
-  val Complete  = Value("complete")
-  val Expired   = Value("expired")
-  val Invalid   = Value("invalid")
+sealed trait InvoiceState extends EnumEntry with Uncapitalised
+
+object InvoiceState extends Enum[InvoiceState] with PlayJsonEnum[InvoiceState] {
+  val values = findValues
+
+  case object New       extends InvoiceState
+  case object Paid      extends InvoiceState
+  case object Confirmed extends InvoiceState
+  case object Complete  extends InvoiceState
+  case object Expired   extends InvoiceState
+  case object Invalid   extends InvoiceState
 }

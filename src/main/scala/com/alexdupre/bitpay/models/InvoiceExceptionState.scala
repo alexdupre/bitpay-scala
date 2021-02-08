@@ -1,8 +1,14 @@
 package com.alexdupre.bitpay.models
 
-object InvoiceExceptionState extends Enumeration {
+import enumeratum.EnumEntry.Uncapitalised
+import enumeratum._
 
-  val PaidPartial = Value("paidPartial")
-  val PaidOver    = Value("paidOver")
-  val PaidLate    = Value("paidLate")
+sealed trait InvoiceExceptionState extends EnumEntry with Uncapitalised
+
+object InvoiceExceptionState extends Enum[InvoiceExceptionState] with PlayJsonEnum[InvoiceExceptionState] {
+  val values = findValues
+
+  case object PaidPartial extends InvoiceExceptionState
+  case object PaidOver    extends InvoiceExceptionState
+  case object PaidLate    extends InvoiceExceptionState
 }

@@ -1,38 +1,64 @@
 package com.alexdupre.bitpay.models
 
+import ai.x.play.json.Jsonx
+import play.api.libs.json.{JsBoolean, JsResult, JsSuccess, JsValue, Json, Reads, Writes}
+
 import java.time.Instant
 
 case class Invoice(
-    id: String,
-    token: String,
+    url: String,
+    posData: Option[String],
+    status: InvoiceState,
     price: BigDecimal,
     currency: String,
-    orderId: Option[String],
     itemDesc: Option[String],
-    notificationEmail: Option[String],
-    notificationURL: Option[String],
-    redirectUrl: Option[String],
-    paymentCodes: Map[String, Map[String, String]], // BIP72b & BIP73 for BTC/BCH, EIP681 for ETH
-    posData: Option[String],
-    physical: Option[Boolean],
-    url: String,
-    status: InvoiceState.Value,
-    lowFeeDetected: Boolean,
-    targetConfirmations: Int,
-    amountPaid: Long,
-    displayAmountPaid: String,
-    paymentSubtotals: Map[String, Long],
-    paymentTotals: Map[String, Long],
-    paymentDisplaySubTotals: Map[String, String],
-    paymentDisplayTotals: Map[String, String],
-    minerFees: Map[String, MinerFee],
+    orderId: Option[String],
     invoiceTime: Instant,
     expirationTime: Instant,
     currentTime: Instant,
-    exceptionStatus: Option[InvoiceExceptionState.Value],
-    exchangeRates: Map[String, Map[String, BigDecimal]],
+    // guid: UUID,
+    id: String,
+    lowFeeDetected: Boolean,
+    amountPaid: BigDecimal,
+    displayAmountPaid: String,
+    exceptionStatus: Either[Boolean, InvoiceExceptionState],
+    targetConfirmations: Int,
     transactions: Seq[Transaction],
-    creditedOverpaymentAmounts: Option[Map[String, BigDecimal]],
+    //transactionSpeed
+    buyer: BuyerInfo,
+    redirectUrl: Option[String],
+    //refundAddresses: Seq[RefundAddress], // JObject(List((2N8hwP1WmJrFF5QWABn38y63uYLhnJYJYTF,JObject(List((type,JString(buyerSupplied)), (date,JString(2018-04-09T09:43:36.915Z)))))))
+    refundAddressRequestPending: Boolean,
+    buyerProvidedEmail: Option[String],
+    //buyerProvidedInfo: BuyerProvidedInfo,
+    paymentSubtotals: Map[String, BigInt],
+    paymentTotals: Map[String, BigInt],
+    paymentDisplayTotals: Map[String, String],
+    paymentDisplaySubTotals: Map[String, String],
+    exchangeRates: Map[String, Map[String, BigDecimal]],
+    minerFees: Map[String, MinerFee],
+    nonPayProPaymentReceived: Option[Boolean],
+    //shopper: Shopper
+    //billId
+    //refundInfo
+    jsonPayProRequired: Boolean,
     transactionCurrency: Option[String],
-    supportedTransactionCurrencies: Map[String, SupportedTransactionCurrency]
+    underpaidAmount: Option[BigDecimal],
+    overpaidAmount: Option[BigDecimal],
+    supportedTransactionCurrencies: Map[String, SupportedTransactionCurrency],
+    paymentCodes: Map[String, Map[String, String]], // BIP72b & BIP73 for BTC/BCH, EIP681 for ETH
+    token: String
 )
+
+object Invoice {
+  implicit val readEither: Reads[Either[Boolean, InvoiceExceptionState]] = new Reads[Either[Boolean, InvoiceExceptionState]] {
+    override def reads(json: JsValue): JsResult[Either[Boolean, InvoiceExceptionState]] = json match {
+      case JsBoolean(b) => JsSuccess(Left(b))
+      case _            => json.validate[InvoiceExceptionState].map(s => Right(s))
+    }
+  }
+  implicit val writeEither: Writes[Either[Boolean, InvoiceExceptionState]] = new Writes[Either[Boolean, InvoiceExceptionState]] {
+    override def writes(o: Either[Boolean, InvoiceExceptionState]): JsValue = o.fold(b => JsBoolean(b), s => Json.toJson(s))
+  }
+  implicit val format = Jsonx.formatCaseClass[Invoice]
+}

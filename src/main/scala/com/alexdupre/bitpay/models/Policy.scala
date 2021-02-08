@@ -1,3 +1,9 @@
 package com.alexdupre.bitpay.models
 
-case class Policy(policy: PolicyType.Value, method: PolicyMethod.Value, params: Seq[String])
+import play.api.libs.json.Json
+
+case class Policy(policy: PolicyType, method: PolicyMethod, params: Seq[String])
+
+object Policy {
+  implicit val format = Json.format[Policy]
+}

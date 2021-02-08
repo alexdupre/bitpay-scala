@@ -1,16 +1,20 @@
 package com.alexdupre.bitpay.models
 
+import play.api.libs.json.Json
+
 case class Currency(
     code: String,
-    symbol: String,
+    symbol: Option[String],
     precision: Int,
-    exchangePctFee: Int,
-    payoutEnabled: Boolean,
     name: String,
     plural: String,
     alts: String,
     minimum: BigDecimal,
     sanctioned: Boolean,
-    payoutFields: Seq[String],
-    settlementMinimum: Option[BigDecimal] = None
+    decimals: Int,
+    chain: Option[String]
 )
+
+object Currency {
+  implicit val format = Json.format[Currency]
+}

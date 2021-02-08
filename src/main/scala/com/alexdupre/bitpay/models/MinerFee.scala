@@ -1,3 +1,9 @@
 package com.alexdupre.bitpay.models
 
-case class MinerFee(satoshisPerByte: BigDecimal, totalFee: Long)
+import play.api.libs.json.Json
+
+case class MinerFee(satoshisPerByte: BigDecimal, totalFee: BigInt)
+
+object MinerFee {
+  implicit val format = Json.format[MinerFee]
+}
