@@ -8,7 +8,9 @@ Supported resources:
 - Currencies
 - Invoices
 - Ledgers
+- Payouts
 - Rates
+- Recipients
 - Tokens
 
 ## Artifacts
@@ -17,7 +19,7 @@ The latest release of the library is compiled with Scala 2.11, 2.12 and 2.13 and
 
 | Version | Artifact Id             | HTTP Provider   | Json Provider | Scala              |
 | ------- | ----------------------- | --------------- | ------------- | ------------------ |
-| 2.1     | bitpay                  | Gigahorse 0.5.x | Play-Json     | 2.11 & 2.12 & 2.13 |
+| 2.2     | bitpay                  | Gigahorse 0.5.x | Play-Json     | 2.11 & 2.12 & 2.13 |
 
 If you're using SBT, add the following line to your build file:
 
@@ -40,7 +42,7 @@ val identity = Identity.random()
 
 val client: BitPay = BitPayClient(identity, testNet = true)
 
-val token: Future[Token] = client.getPairingCode(label = "My Client", facade = "pos")
+val token: Future[Token] = client.getPairingCode(label = "My Client", facade = Some("pos"))
 
 token foreach { t =>
   println(identity)
@@ -64,7 +66,7 @@ val basicInvoice: Future[Invoice] = client.createInvoice(150, "USD")
 
 val orderInfo  = OrderInfo(orderId = Some("A-123"), itemDesc = Some("An awesome item"), physical = Some(true))
 val ipnParams  = IPNParams(notificationURL = Some("https://example.net/ipn"), transactionSpeed = Some(TransactionSpeed.Medium), fullNotifications = Some(true))
-val buyer      = Some(BuyerInfo(email = "purchaser@example.net"))
+val buyer      = BuyerInfo(email = "purchaser@example.net")
 val complexInvoice: Future[Invoice] = client.createInvoice(150, "USD", ipnParams, orderInfo, buyer)
 ```
 
