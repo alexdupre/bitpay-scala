@@ -23,6 +23,7 @@ case class Payout(
     notificationEmail: Option[String],
     instructions: Seq[PayoutInstructions],
     // guid: UUID
+    dateExecuted: Option[Instant],
     token: Option[String]
 )
 
