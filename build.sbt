@@ -4,9 +4,9 @@ organization := "com.alexdupre"
 
 version := "2.1"
 
-crossScalaVersions := Seq("2.11.12", "2.12.13", "2.13.4")
+crossScalaVersions := Seq("2.11.12", "2.12.13", "2.13.5")
 
-scalaVersion := "2.13.4"
+scalaVersion := "2.13.5"
 
 scalacOptions := List("-feature", "-unchecked", "-deprecation", "-explaintypes", "-encoding", "UTF8", "-language:postfixOps")
 
