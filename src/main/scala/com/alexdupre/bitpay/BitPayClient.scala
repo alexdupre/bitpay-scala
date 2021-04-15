@@ -75,6 +75,16 @@ class BitPayClient(identity: Identity, testNet: Boolean, http: HttpClient)(impli
     addHeaders(req, authenticated).post(payload)
   }
 
+  private def put(path: String, params: JsObject = Json.obj(), token: Option[String] = None, authenticated: Boolean = true) = {
+    val payload = addGuidAndToken(params, token)
+    val req     = url(apiUrl + path)
+    implicit val jsonCodec = new HttpWrite[JsObject] {
+      override def toByteArray(a: JsObject): Array[Byte] = a.toString().getBytes(utf8)
+      override def contentType: Option[String]           = Some(MimeTypes.JSON)
+    }
+    addHeaders(req, authenticated).put(payload)
+  }
+
   private def delete(
       path: String,
       params: Map[String, Option[Any]] = Map.empty,
@@ -91,9 +101,9 @@ class BitPayClient(identity: Identity, testNet: Boolean, http: HttpClient)(impli
     addHeaders(req, authenticated).delete
   }
 
-  def execute[T](req: Request)(implicit reads: Reads[T]): Future[T] = {
+  def execute[T](req: Request, noData: Boolean = false)(implicit reads: Reads[T]): Future[T] = {
     logger.debug(s"Request: ${req.method} ${req.url}")
-    if (req.method == "POST" && logger.isTraceEnabled)
+    if (Set("POST", "PUT")(req.method) && logger.isTraceEnabled)
       logger.trace(s"Payload: ${new String(req.body.asInstanceOf[InMemoryBody].bytes, utf8)}")
     http.processFull(req).map { response =>
       logger.debug(s"Response Status: ${response.status}")
@@ -106,15 +116,33 @@ class BitPayClient(identity: Identity, testNet: Boolean, http: HttpClient)(impli
       logger.trace(s"Response:\n${Json.prettyPrint(js)}")
       if (response.status / 100 == 2) {
         try {
-          js match {
-            case o: JsObject => (o \ "data").as[T]
-            case a: JsArray  => a.as[T]
-            case _           => throw BitPayProtocolException()
-          }
+          if (noData) js.as[T]
+          else js.as[DataResponse[T]].data
         } catch {
           case e: JsResultException => throw BitPayProtocolException("BitPay JSON error: " + e.getMessage).initCause(e)
         }
       } else {
+        throw (js \ "error").asOpt[String].map(BitPayReturnedException).getOrElse(BitPayProtocolException())
+      }
+    }
+  }
+
+  def executeUnit(req: Request): Future[Unit] = {
+    logger.debug(s"Request: ${req.method} ${req.url}")
+    if (Set("POST", "PUT")(req.method) && logger.isTraceEnabled)
+      logger.trace(s"Payload: ${new String(req.body.asInstanceOf[InMemoryBody].bytes, utf8)}")
+    http.processFull(req).map { response =>
+      logger.debug(s"Response Status: ${response.status}")
+      if (response.status / 100 == 2) {
+        response.close()
+      } else {
+        val js =
+          try {
+            Json.parse(response.bodyAsString)
+          } catch {
+            case NonFatal(_) => throw BitPayProtocolException()
+          }
+        logger.trace(s"Response:\n${Json.prettyPrint(js)}")
         throw (js \ "error").asOpt[String].map(BitPayReturnedException).getOrElse(BitPayProtocolException())
       }
     }
@@ -126,10 +154,10 @@ class BitPayClient(identity: Identity, testNet: Boolean, http: HttpClient)(impli
     execute[Seq[Map[String, String]]](get("tokens")).map(list => list.map(map => map.toSeq.head).toMap)
   }
 
-  override def getPairingCode(label: String, facade: String): Future[Token] = {
+  override def getPairingCode(label: String, facade: Option[String]): Future[Token] = {
     val params = Json.obj("label" -> label.replaceAll("[^a-zA-Z0-9_ ]", "_").take(60), "id" -> identity.sin, "facade" -> facade)
     execute[Seq[Token]](post("tokens", params, authenticated = false)) map { ts =>
-      tokens ++= ts.map(t => t.facade -> t.token)
+      tokens ++= ts.flatMap(t => t.facade.map(_ -> t.token))
       ts.sortBy(_.dateCreated).last
     }
   }
@@ -137,7 +165,7 @@ class BitPayClient(identity: Identity, testNet: Boolean, http: HttpClient)(impli
   override def setPairingCode(label: String, pairingCode: String): Future[Token] = {
     val params = Json.obj("label" -> label.replaceAll("[^a-zA-Z0-9_ ]", "_").take(60), "id" -> identity.sin, "pairingCode" -> pairingCode)
     execute[Seq[Token]](post("tokens", params, authenticated = false)) map { ts =>
-      tokens ++= ts.map(t => t.facade -> t.token)
+      tokens ++= ts.flatMap(t => t.facade.map(_ -> t.token))
       ts.sortBy(_.dateCreated).last
     }
   }
@@ -209,26 +237,26 @@ class BitPayClient(identity: Identity, testNet: Boolean, http: HttpClient)(impli
     execute[Seq[Invoice]](get("invoices", params, getAccessToken("merchant")))
   }
 
-  override def requestRefund(id: String, buyerEmail: String): Future[Unit] = {
+  override def requestInvoiceRefund(id: String, buyerEmail: String): Future[Unit] = {
     getInvoice(id).flatMap { invoice =>
       val params = Json.obj("refundEmail" -> buyerEmail, "amount" -> invoice.amountPaid, "currency" -> invoice.currency)
-      execute[JsValue](post(s"invoices/$id/refunds", params, Some(invoice.token))).map(_ => ())
+      executeUnit(post(s"invoices/$id/refunds", params, Some(invoice.token)))
     }
   }
 
-  override def getRefunds(id: String): Future[Seq[Refund]] = {
+  override def getInvoiceRefunds(id: String): Future[Seq[Refund]] = {
     getInvoiceToken(id).flatMap { token =>
       execute[Seq[Refund]](get(s"invoices/$id/refunds", token = Some(token)))
     }
   }
 
-  override def resendNotification(id: String): Future[Unit] = {
+  override def resendInvoiceNotification(id: String): Future[Unit] = {
     getInvoiceToken(id).flatMap { token =>
       execute[String](post(s"invoices/$id/notifications", token = Some(token))).map(_ => ())
     }
   }
 
-  // Ledger
+  // Ledgers
 
   override def getLedgers(): Future[Map[String, LedgerSummary]] = {
     val ledgers = execute[Seq[LedgerSummary]](get("ledgers", token = getAccessToken("merchant")))
@@ -243,7 +271,87 @@ class BitPayClient(identity: Identity, testNet: Boolean, http: HttpClient)(impli
       endDate: OffsetDateTime = OffsetDateTime.now()
   ): Future[Seq[LedgerEntry]] = {
     val params = Map("startDate" -> startDate, "endDate" -> endDate)
-    execute[Seq[LedgerEntry]](get(s"ledgers/$currency", params, getAccessToken("merchant")))
+    execute[Seq[LedgerEntry]](get(s"ledgers/$currency", params, getAccessToken("merchant")), noData = true)
+  }
+
+  // Recipients
+
+  override def inviteRecipients(recipients: Seq[RecipientInvite]): Future[Seq[Recipient]] = {
+    val params = Json.obj("recipients" -> recipients)
+    execute[Seq[Recipient]](post("recipients", params, getAccessToken("payroll")))
+  }
+
+  override def inviteRecipient(email: String, label: Option[String] = None, notificationURL: Option[String] = None): Future[Recipient] = {
+    inviteRecipients(Seq(RecipientInvite(email, label, notificationURL))).map(_.head)
+  }
+
+  override def getRecipient(id: String): Future[Recipient] = {
+    execute[Recipient](get(s"recipients/$id", token = getAccessToken("payroll")))
+  }
+
+  override def getRecipients(
+      status: Option[RecipientState] = None,
+      limit: Option[Int] = None,
+      offset: Option[Int] = None
+  ): Future[Seq[Recipient]] = {
+    val params = Map(
+      "status" -> status.map(_.entryName),
+      "limit"  -> limit,
+      "offset" -> offset
+    )
+    execute[Seq[Recipient]](get("recipients", params, getAccessToken("payroll")))
+  }
+
+  override def updateRecipient(id: String, label: Option[String] = None, notificationURL: Option[String] = None): Future[Recipient] = {
+    val params = Json.obj("label" -> label, "notificationURL" -> notificationURL)
+    execute[Recipient](put(s"recipients/$id", params, getAccessToken("payroll")))
+  }
+
+  override def removeRecipient(id: String): Future[Unit] = {
+    executeUnit(delete(s"recipients/$id", token = getAccessToken("payroll")))
+  }
+
+  override def resendRecipientNotification(id: String): Future[Unit] = {
+    executeUnit(post(s"recipients/$id/notifications", token = getAccessToken("payroll") /*Some(token)*/ ))
+  }
+
+  // Payouts
+
+  override def createPayout(
+      totalAmount: BigDecimal,
+      currency: String,
+      instructions: Seq[Instructions],
+      effectiveDate: Instant = Instant.now(),
+      reference: Option[String] = None,
+      notificationEmail: Option[String] = None,
+      notificationURL: Option[String] = None
+  ): Future[Payout] = {
+    val params = Json.obj(
+      "amount"            -> totalAmount,
+      "currency"          -> currency,
+      "reference"         -> reference,
+      "effectiveDate"     -> effectiveDate,
+      "instructions"      -> instructions,
+      "notificationEmail" -> notificationEmail,
+      "notificationURL"   -> notificationURL
+    )
+    execute[Payout](post("payouts", params, getAccessToken("payroll")))
+  }
+
+  override def getPayouts(status: PayoutState): Future[Seq[Payout]] = {
+    val params = Map("status" -> status.entryName)
+    execute[Seq[Payout]](get("payouts", params, getAccessToken("payroll")))
+  }
+
+  override def getPayout(id: String): Future[Payout] = {
+    val token = getAccessToken("payroll")
+    execute[Payout](get(s"payouts/$id", Map.empty, token))
+  }
+
+  override def cancelPayout(id: String): Future[Payout] = {
+    getPayout(id).flatMap { payout =>
+      execute[Payout](delete(s"payouts/$id", token = payout.token))
+    }
   }
 
 }

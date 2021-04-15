@@ -8,10 +8,10 @@ case class Token(
     policies: Seq[Policy],
     resource: Option[String],
     token: String,
-    facade: String,
+    facade: Option[String],
     label: Option[String],
     dateCreated: Instant,
-    pairingExpiration: Option[OffsetDateTime],
+    pairingExpiration: Option[Instant],
     pairingCode: Option[String]
 )
 
