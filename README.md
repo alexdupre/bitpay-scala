@@ -19,7 +19,7 @@ The latest release of the library is compiled with Scala 2.11, 2.12 and 2.13 and
 
 | Version | Artifact Id             | HTTP Provider   | Json Provider | Scala              |
 | ------- | ----------------------- | --------------- | ------------- | ------------------ |
-| 2.2     | bitpay                  | Gigahorse 0.5.x | Play-Json     | 2.11 & 2.12 & 2.13 |
+| 2.2.1   | bitpay                  | Gigahorse 0.5.x | Play-Json     | 2.11 & 2.12 & 2.13 |
 
 If you're using SBT, add the following line to your build file:
 
