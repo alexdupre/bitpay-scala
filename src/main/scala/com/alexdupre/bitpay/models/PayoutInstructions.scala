@@ -4,6 +4,7 @@ import play.api.libs.json.Json
 
 case class PayoutInstructions(
     id: String,
+    payoutId: Option[String],
     amount: BigDecimal,
     btc: PayoutAmount,
     address: Option[String],
@@ -13,7 +14,7 @@ case class PayoutInstructions(
     label: Option[String],
     transactions: Seq[PayoutTransaction],
     status: PayoutInstructionsState,
-    currency: String
+    currency: Option[String]
 )
 
 object PayoutInstructions {

@@ -14,6 +14,8 @@ case class Payout(
     percentFee: BigDecimal,
     fee: BigDecimal,
     depositTotal: BigDecimal,
+    rates: Map[String, BigDecimal],
+    totals: Map[String, BigDecimal],
     rate: Option[BigDecimal],
     btc: Option[BigDecimal],
     currency: String,
