@@ -6,18 +6,16 @@ import com.alexdupre.bitpay.models._
 import gigahorse._
 import gigahorse.support.okhttp.Gigahorse._
 import org.slf4j.LoggerFactory
-import play.api.libs.json.{JsArray, JsObject, JsResultException, JsValue, Json, Reads}
+import play.api.libs.json.{JsObject, JsResultException, Json, Reads}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.control.NonFatal
 
-class BitPayClient(identity: Identity, testNet: Boolean, http: HttpClient)(implicit ec: ExecutionContext) extends BitPay {
+class BitPayClient(apiUrl: String, identity: Identity, http: HttpClient)(implicit ec: ExecutionContext) extends BitPay {
 
   val logger = LoggerFactory.getLogger(classOf[BitPayClient])
-
-  val apiUrl = if (testNet) "https://test.bitpay.com/" else "https://bitpay.com/"
 
   logger.debug(s"Identity: ${identity.publicIdentity}")
   logger.debug(s"Sin: ${identity.sin}")
@@ -358,8 +356,16 @@ class BitPayClient(identity: Identity, testNet: Boolean, http: HttpClient)(impli
 
 object BitPayClient {
 
-  def apply(identity: Identity, testNet: Boolean = false)(implicit ec: ExecutionContext) =
-    new BitPayClient(identity, testNet, defaultHttpExecutor)
+  def apply(identity: Identity, testNet: Boolean = false)(implicit ec: ExecutionContext): BitPayClient = {
+    val apiUrl = if (testNet) "https://test.bitpay.com/" else "https://bitpay.com/"
+    apply(apiUrl, identity)
+  }
+
+  def apply(apiUrl: String, identity: Identity)(implicit ec: ExecutionContext): BitPayClient = {
+    require(apiUrl.startsWith("http"), "`apiUrl` must start with http:// or https://")
+    require(apiUrl.endsWith("/"), "`apiUrl` must end with a `/`")
+    new BitPayClient(apiUrl, identity, defaultHttpExecutor)
+  }
 
   lazy val defaultHttpExecutor = {
     val cfg = config

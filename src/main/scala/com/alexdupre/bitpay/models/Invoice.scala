@@ -19,37 +19,38 @@ case class Invoice(
     id: String,
     lowFeeDetected: Boolean,
     amountPaid: BigDecimal,
-    displayAmountPaid: String,
+    displayAmountPaid: Option[String],
     exceptionStatus: Either[Boolean, InvoiceExceptionState],
-    targetConfirmations: Int,
-    transactions: Seq[Transaction],
-    transactionSpeed: TransactionSpeed,
+    targetConfirmations: Option[Int],
+    transactions: Option[Seq[Transaction]],
+    transactionSpeed: Option[TransactionSpeed],
     buyer: BuyerInfo,
     redirectURL: Option[String],
-    refundAddresses: Seq[Map[String, RefundAddressInfo]],
+    refundAddresses: Option[Seq[Map[String, RefundAddressInfo]]],
     refundAddressRequestPending: Boolean,
     buyerProvidedEmail: Option[String],
-    buyerProvidedInfo: BuyerProvidedInfo,
+    buyerProvidedInfo: Option[BuyerProvidedInfo],
     paymentSubtotals: Map[String, BigInt],
     paymentTotals: Map[String, BigInt],
-    paymentDisplayTotals: Map[String, String],
-    paymentDisplaySubTotals: Map[String, String],
+    paymentDisplayTotals: Option[Map[String, String]],
+    paymentDisplaySubTotals: Option[Map[String, String]],
     exchangeRates: Map[String, Map[String, BigDecimal]],
     minerFees: Map[String, MinerFee],
     nonPayProPaymentReceived: Option[Boolean],
-    shopper: Shopper,
+    shopper: Option[Shopper],
     billId: Option[String],
     refundInfo: Option[Seq[RefundInfo]], // never seen
-    jsonPayProRequired: Boolean,
+    jsonPayProRequired: Option[Boolean],
     transactionCurrency: Option[String],
     underpaidAmount: Option[BigDecimal],
     overpaidAmount: Option[BigDecimal],
     supportedTransactionCurrencies: Map[String, SupportedTransactionCurrency],
-    paymentCodes: Map[String, Map[String, String]], // BIP72b & BIP73 for BTC/BCH, EIP681 for ETH
+    paymentCodes: Map[String, Map[String, Option[String]]], // BIP72b & BIP73 for BTC/BCH, EIP681 for ETH
     token: String
 )
 
 object Invoice {
+  import ai.x.play.json.implicits.optionWithNull
   implicit val buyerFormat = BuyerInfo.standardFormat
   implicit val format      = Jsonx.formatCaseClass[Invoice]
 }
