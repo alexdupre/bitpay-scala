@@ -13,12 +13,15 @@ Supported resources:
 - Recipients
 - Tokens
 
+The library has been barely tested with the open-source BTCPay Server, that implements the Invoices (with Instant Payment Notifications) and Tokens resources only.
+
 ## Artifacts
 
 The latest release of the library is compiled with Scala 2.12 and 2.13 and supports only Gigahorse with OkHttp backend as HTTP provider.
 
 | Version | Artifact Id             | HTTP Provider   | Json Provider | Scala              |
-| ------- | ----------------------- | --------------- | ------------- | ------------------ |
+|---------| ----------------------- |-----------------| ------------- | ------------------ |
+| 2.4     | bitpay                  | Gigahorse 0.7.x | Play-Json     | 2.12 & 2.13        |
 | 2.3     | bitpay                  | Gigahorse 0.5.x | Play-Json     | 2.12 & 2.13        |
 | 2.2.1   | bitpay                  | Gigahorse 0.5.x | Play-Json     | 2.11               |
 
